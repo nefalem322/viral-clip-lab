@@ -1,0 +1,171 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>chapter</title>
+<style>
+  :root { --bg:#e9e1d2; --card:#f4eee3; --ink:#2a251f; --dim:#9a8e7b; --line:#ddd3c2; --track:#e6dccb; --acc:#c2603a; --ok:#6f8a5b; --amber:#d9a35a; --blue:#5b7fa6; --plum:#8a5a7a; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { width:1080px; height:1080px; background:var(--bg); color:var(--ink); overflow:hidden; font-family:Inter,sans-serif; }
+  .mono { font-family:"JetBrains Mono",monospace; }
+  #k { position:absolute; left:48px; top:40px; font:500 18px "JetBrains Mono",monospace; letter-spacing:2px; color:var(--dim); }
+  #t { position:absolute; left:48px; top:76px; font:600 104px/1 Oswald,sans-serif; letter-spacing:1px; }
+  #t .n { color:#c9bca6; }
+  #d { position:absolute; left:52px; top:196px; right:48px; font:500 24px/1.35 Inter,sans-serif; color:#6e6455; }
+  #dots { position:absolute; right:48px; top:50px; display:flex; gap:8px; }
+  #dots span { font:700 15px "JetBrains Mono",monospace; padding:7px 11px; border-radius:999px; color:var(--dim); border:1.5px solid var(--line); }
+  #dots span.on { background:var(--ink); color:var(--card); border-color:var(--ink); }
+  #dots span.done { color:var(--ok); border-color:#c9d3bd; }
+  #stage { position:absolute; left:48px; right:48px; top:270px; bottom:84px; }
+  #foot { position:absolute; left:48px; right:48px; bottom:32px; display:flex; justify-content:space-between; font:500 16px "JetBrains Mono",monospace; color:var(--dim); }
+  .card { position:absolute; background:var(--card); border-radius:22px; box-shadow:0 1px 0 var(--line) inset, 0 12px 30px rgba(90,70,40,.07); overflow:hidden; }
+  .lbl { font:700 14px "JetBrains Mono",monospace; letter-spacing:2px; color:var(--dim); text-transform:uppercase; }
+  .pill { display:inline-block; font:700 14px "JetBrains Mono",monospace; letter-spacing:1px; padding:6px 12px; border-radius:999px; }
+  .cur { display:inline-block; width:12px; height:24px; background:var(--ok); vertical-align:-4px; margin-left:2px; }
+  /* scout */
+  .fr { position:absolute; left:20px; right:20px; height:76px; display:grid; grid-template-columns:64px 1fr 210px; gap:18px; align-items:center; padding:0 12px; border-radius:16px; }
+  .fr img { width:64px; height:64px; border-radius:12px; object-fit:cover; }
+  .fr .a { font:600 22px Inter,sans-serif; } .fr .b { font:500 15px "JetBrains Mono",monospace; color:var(--dim); margin-top:3px; }
+  .fr .v { font:700 22px "JetBrains Mono",monospace; text-align:right; } .fr .bar { height:7px; border-radius:4px; background:var(--track); margin-top:8px; overflow:hidden; } .fr .bar i { display:block; height:100%; background:var(--acc); }
+  .fr.pick { background:var(--ink); color:var(--card); } .fr.pick .b { color:#c9bca6; }
+  /* check */
+  .sh { position:absolute; border-radius:10px; object-fit:cover; }
+  .ci { position:absolute; left:28px; right:28px; height:96px; border-bottom:1.5px solid var(--line); display:grid; grid-template-columns:44px 1fr; gap:14px; align-items:center; }
+  .ci .bx { width:40px; height:40px; border-radius:12px; border:2px solid var(--line); display:grid; place-items:center; font:700 22px Inter; color:#fff; }
+  .ci .q { font:600 21px Inter,sans-serif; } .ci .r { font:500 16px "JetBrains Mono",monospace; color:var(--dim); margin-top:4px; }
+  /* generic text */
+  .ptxt { font:400 24px/1.5 "JetBrains Mono",monospace; white-space:pre-wrap; }
+  .tag { color:var(--acc); font-weight:700; }
+</style>
+</head>
+<body>
+<div id="k"></div><div id="t"></div><div id="d"></div><div id="dots"></div>
+<div id="stage"></div>
+<div id="foot"><span>claude viral lab</span><span>github.com/nefalem322/viral-clip-lab</span></div>
+<script>
+let D, DUR, M;
+const C = { acc:"#c2603a", ok:"#6f8a5b", amber:"#d9a35a", blue:"#5b7fa6", plum:"#8a5a7a", ink:"#2a251f", dim:"#9a8e7b", track:"#e6dccb" };
+const ease = x => x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3) / 2;
+const cl = (x, a=0, b=1) => Math.max(a, Math.min(b, x));
+const lerp = (a, b, x) => a + (b - a) * x;
+const $ = id => document.getElementById(id);
+async function loadFonts(root) {
+  const f = [["JetBrains Mono","JetBrainsMono-Regular.ttf","400"],["JetBrains Mono","JetBrainsMono-Bold.ttf","700"],["Oswald","Oswald.ttf","200 700"],["Inter","Inter.ttf","100 900"]];
+  for (const [fam, file, w] of f) { try { const ff = new FontFace(fam, `url(${root}/assets/fonts/${file})`, {weight:w}); await ff.load(); document.fonts.add(ff); } catch(e) {} }
+}
+const type = (s, p) => s.slice(0, Math.floor(s.length * cl(p)));
+
+const MODES = {
+  scout: {
+    init() {
+      $("stage").innerHTML = `<div class="card" style="inset:0"><div class="lbl" style="position:absolute;left:28px;top:22px">live feed · shorts · tiktok · reels · last 48h</div><div class="lbl" id="sc" style="position:absolute;right:28px;top:22px"></div>${D.feed.map((r,i)=>`<div class="fr" id="f${i}"><img src="${r.img}"><div><div class="a">${r.t}</div><div class="b">${r.p} · ${r.age}</div></div><div><div class="v" id="fv${i}"></div><div class="bar"><i id="fb${i}"></i></div></div></div>`).join("")}</div>`;
+    },
+    val(r, t) { return r.vh * (0.15 + 0.85 * ease(cl(t / (DUR * .65)))) * (1 + 0.05 * Math.sin(t * 3 + r.vh)); },
+    render(t) {
+      const F = D.feed, rank = tt => { const v = F.map((r, i) => [this.val(r, tt), i]).sort((a, b) => b[0] - a[0]); const o = []; v.forEach(([, i], k) => o[i] = k); return o; };
+      const pos = F.map(() => 0); for (let s = 0; s < 8; s++) { const rk = rank(Math.max(0, t - s * .06)); rk.forEach((k, i) => pos[i] += k / 8); }
+      const pick = t > DUR * .72;
+      F.forEach((r, i) => { const v = this.val(r, t); const e = $("f" + i); e.style.top = (64 + pos[i] * 84) + "px";
+        $("fv" + i).textContent = Math.round(v) + "K/h"; $("fb" + i).style.width = cl(v / 330) * 100 + "%";
+        e.className = "fr" + (pick && rank(t)[i] === 0 ? " pick" : ""); });
+      $("sc").textContent = pick ? "PICK · TIN MAN DINNER" : `SCANNED ${Math.round(lerp(0, 312, cl(t / (DUR * .7))))}`;
+      $("sc").style.color = pick ? C.ok : "";
+    }
+  },
+  check: {
+    init() {
+      const sh = D.sheet.map((u, i) => `<img class="sh" id="s${i}" src="${u}" style="left:${24 + (i % 3) * 140}px;top:${60 + Math.floor(i / 3) * 196}px;width:128px;height:184px">`).join("");
+      $("stage").innerHTML = `<div class="card" style="left:0;top:0;width:470px;bottom:0"><div class="lbl" style="position:absolute;left:24px;top:22px">contact sheet · 9 frames</div>${sh}</div>
+        <div class="card" style="left:494px;right:0;top:0;bottom:0"><div class="lbl" style="position:absolute;left:28px;top:22px">claude looks at the frames</div>
+        ${D.checks.map((c, i) => `<div class="ci" style="top:${62 + i * 104}px"><div class="bx" id="b${i}"></div><div><div class="q">${c[0]}</div><div class="r" id="r${i}"></div></div></div>`).join("")}
+        <div id="vd" style="position:absolute;left:28px;bottom:26px;font:600 64px Oswald,sans-serif"></div></div>`;
+    },
+    render(t) {
+      D.sheet.forEach((u, i) => { const e = $("s" + i); const a = cl((t - i * .18) / .4); e.style.opacity = a; e.style.transform = `translateY(${(1 - a) * 14}px)`; });
+      D.checks.forEach((c, i) => { const t0 = 1.8 + i * 1.6, p = cl((t - t0) / 1.1); $("r" + i).textContent = type(c[1], p);
+        const b = $("b" + i); b.textContent = p >= 1 ? "✓" : ""; b.style.background = p >= 1 ? C.ok : "transparent"; b.style.borderColor = p >= 1 ? C.ok : "";
+        b.style.boxShadow = p > 0 && p < 1 ? `0 0 0 ${3 + 3 * Math.sin(t * 9)}px rgba(111,138,91,.25)` : "none"; });
+      const done = t > 1.8 + D.checks.length * 1.6 + .2; $("vd").innerHTML = done ? `<span class="pill" style="font-size:40px;padding:10px 26px;background:${C.ok};color:#fff">TAKE</span> <span style="font:500 22px Inter;color:${C.dim}">worth today's slot</span>` : "";
+    }
+  },
+  decode: {
+    init() {
+      const fr = D.hook.map((u, i) => `<div style="position:absolute;left:${22 + (i % 6) * 152}px;top:${58 + Math.floor(i / 6) * 222}px;width:140px"><img id="h${i}" src="${u}" style="width:140px;height:190px;border-radius:10px;object-fit:cover"><div class="lbl" style="margin-top:6px;text-align:center">${(i * .25).toFixed(2)}s</div></div>`).join("");
+      $("stage").innerHTML = `<div class="card" style="left:0;right:0;top:0;height:520px"><div class="lbl" style="position:absolute;left:24px;top:22px">first 3 seconds · 4 frames per second</div>${fr}<div id="scan" style="position:absolute;top:50px;width:4px;height:450px;background:${C.acc};border-radius:2px"></div></div>
+        <div class="card" style="left:0;right:0;top:540px;bottom:0;padding:22px 28px"><div id="hv" style="font:500 25px/1.4 Inter"></div></div>`;
+    },
+    render(t) {
+      const p = cl(t / (DUR * .55)); D.hook.forEach((u, i) => { const on = p * 12 > i; $("h" + i).style.opacity = on ? 1 : .18; $("h" + i).style.filter = on ? "none" : "grayscale(1)"; });
+      const k = Math.min(11, Math.floor(p * 12)); $("scan").style.left = (22 + (k % 6) * 152 + 146 * ((p * 12) % 1)) + "px"; $("scan").style.top = (50 + Math.floor(k / 6) * 222) + "px"; $("scan").style.height = "200px"; $("scan").style.opacity = p < 1 ? 1 : 0;
+      const v = cl((t - DUR * .58) / (DUR * .3));
+      $("hv").innerHTML = v > 0 ? `<span class="lbl">verdict</span><br>${type(D.verdict, v)}${v < 1 ? '<span class="cur"></span>' : ""}` : `<span class="lbl">reading frames ${String(k + 1).padStart(2, "0")} / 12 …</span>`;
+    }
+  },
+  rebuild: {
+    init() {
+      $("stage").innerHTML = D.prompts.map((p, i) => `<div class="card" style="left:0;width:620px;top:${i * 232}px;height:212px;padding:22px 26px"><div class="lbl">${p[0]}</div><div class="ptxt" id="p${i}" style="margin-top:10px;font-size:21px"></div></div>`).join("")
+        + `<div class="card" style="left:644px;right:0;top:0;bottom:0"><div class="lbl" style="position:absolute;left:22px;top:22px">your generator</div>
+           <img id="still" src="${D.still}" style="position:absolute;left:22px;right:22px;top:60px;width:calc(100% - 44px);height:460px;object-fit:cover;border-radius:14px">
+           <div id="gen" style="position:absolute;left:22px;right:22px;bottom:22px"></div></div>`;
+    },
+    render(t) {
+      const seg = DUR * .27;
+      D.prompts.forEach((p, i) => { const q = cl((t - i * seg) / (seg * .8)); $("p" + i).innerHTML = `<span class="tag">&gt;</span> ` + type(p[1], q) + (q > 0 && q < 1 ? '<span class="cur"></span>' : ""); });
+      const s = cl((t - seg * .9) / .8); $("still").style.opacity = s; $("still").style.filter = `blur(${(1 - s) * 18}px)`;
+      const g = cl((t - seg * 1.1) / (seg * 1.4));
+      $("gen").innerHTML = `<div style="display:flex;justify-content:space-between;font:700 16px 'JetBrains Mono'"><span>${g < 1 ? "KLING 3.0 · RENDERING" : "KLING 3.0 · DONE"}</span><span>${Math.round(g * 100)}%</span></div>
+        <div style="height:12px;border-radius:6px;background:${C.track};margin-top:10px;overflow:hidden"><i style="display:block;height:100%;width:${g * 100}%;background:${g < 1 ? C.acc : C.ok}"></i></div>
+        <div style="margin-top:14px;font:500 15px 'JetBrains Mono';color:${C.dim}">picsart · higgsfield · any generator</div>`;
+    }
+  },
+  track: {
+    init() {
+      $("stage").innerHTML = `<div class="card" style="left:0;right:0;top:0;height:420px;padding:22px 28px"><div class="lbl">tracker.csv · this week</div>
+        <div style="display:grid;grid-template-columns:1.3fr 1.4fr .8fr .8fr;gap:10px;margin-top:16px;font:700 14px 'JetBrains Mono';color:${C.dim};letter-spacing:1px"><span>VIDEO</span><span>HOOK</span><span>VIEWS 7D</span><span>EST. $</span></div>
+        ${D.rows.map((r, i) => `<div style="display:grid;grid-template-columns:1.3fr 1.4fr .8fr .8fr;gap:10px;padding:16px 0;border-top:1.5px solid var(--line);font:600 20px Inter;align-items:center"><span>${r[0]}</span><span style="font-weight:500;color:#6e6455">${r[1]}</span><span class="mono" id="rv${i}"></span><span class="mono" id="rd${i}" style="color:${C.acc}"></span></div>`).join("")}</div>
+        <div class="card" style="left:0;width:600px;top:440px;bottom:0;padding:22px 28px"><div class="lbl">est. payout · last 30 days</div><svg id="ch" viewBox="0 0 560 200" style="width:100%;margin-top:10px"></svg></div>
+        <div class="card" style="left:620px;right:0;top:440px;bottom:0;padding:22px 26px"><div class="lbl">winning hook</div><div id="win" style="font:600 46px/1.05 Oswald;margin-top:14px"></div><div id="win2" style="font:500 17px 'JetBrains Mono';color:${C.dim};margin-top:12px"></div></div>`;
+    },
+    render(t) {
+      const p = ease(cl(t / (DUR * .7)));
+      D.rows.forEach((r, i) => { const v = r[2] * p; $("rv" + i).textContent = v >= 1000 ? (v / 1000).toFixed(1) + "M" : Math.round(v) + "K"; $("rd" + i).textContent = "$" + Math.round(r[3] * p).toLocaleString("en-US"); });
+      const pts = []; for (let i = 0; i <= 29; i++) { const x = 10 + i * 18.6, y = 180 - (30 + i * 4.6 + 10 * Math.sin(i * .9)) ; pts.push([x, y]); }
+      const n = Math.max(2, Math.floor(30 * cl(t / (DUR * .8)))), sl = pts.slice(0, n);
+      const d = sl.map((q, i) => (i ? "L" : "M") + q[0] + " " + q[1].toFixed(1)).join(" ");
+      $("ch").innerHTML = `<path d="${d} L ${sl[sl.length-1][0]} 190 L 10 190 Z" fill="rgba(194,96,58,.12)"/><path d="${d}" fill="none" stroke="${C.acc}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${sl[sl.length-1][0]}" cy="${sl[sl.length-1][1]}" r="7" fill="${C.acc}"/>`;
+      const w = cl((t - DUR * .78) / (DUR * .15)); $("win").textContent = w > 0 ? type("FAMOUS CHARACTERS", w) : "…"; $("win2").textContent = w >= 1 ? "→ added to hooks.txt, used first tomorrow" : "";
+    }
+  },
+  month: {
+    init() {
+      $("stage").innerHTML = `<div style="position:absolute;left:0;right:0;top:6px;height:8px;border-radius:4px;background:${C.track}"><i id="prog" style="display:block;height:100%;border-radius:4px;background:${C.acc}"></i></div>`
+        + D.stages.map((s, i) => `<div class="card" id="m${i}" style="left:${i * 197}px;width:181px;top:40px;height:560px;padding:20px 18px"><div style="font:600 40px/1 Oswald">${s[0]}</div><div class="lbl" style="margin-top:8px">${s[1]}</div><div id="mt${i}" style="font:500 20px/1.42 Inter;margin-top:18px;color:#4a4237"></div></div>`).join("")
+        + `<div id="today" style="position:absolute;left:0;right:0;bottom:0;font:500 22px 'JetBrains Mono';color:${C.dim}"></div>`;
+    },
+    render(t) {
+      const n = D.stages.length, seg = DUR / n, k = Math.min(n - 1, Math.floor(t / seg)), lt = t - k * seg;
+      $("prog").style.width = cl(t / (DUR * .96)) * 100 + "%";
+      D.stages.forEach((s, i) => { const e = $("m" + i), on = i === k, done = i < k;
+        e.style.background = on ? C.ink : "var(--card)"; e.style.color = on ? "#f4eee3" : ""; e.style.transform = on ? "translateY(-10px)" : "none"; e.style.opacity = i > k ? .55 : 1;
+        $("mt" + i).style.color = on ? "#efe6d7" : "#4a4237";
+        $("mt" + i).innerHTML = (i < k ? s[2] : i === k ? type(s[2], cl(lt / (seg * .5))) : "") + (done ? `<div style="margin-top:14px;color:${C.ok};font:700 15px 'JetBrains Mono'">✓ DONE</div>` : ""); });
+      $("today").textContent = "every day: 20 minutes — approve the pick, watch it, post it";
+    }
+  }
+};
+
+window.setup = async function (d) {
+  window.__ready = false; D = d; DUR = d.duration; M = MODES[d.mode];
+  $("k").textContent = "● CLAUDE VIRAL LAB / " + d.num;
+  $("t").innerHTML = d.title + ` <span class="n">/ ${d.num}</span>`;
+  $("d").textContent = d.desc;
+  $("dots").innerHTML = ["01","02","03","04","05","06"].map(x => `<span class="${x === d.num ? "on" : x < d.num ? "done" : ""}">${x}</span>`).join("");
+  if (d.num === "00") $("dots").style.display = "none";
+  M.init();
+  await loadFonts(d.root);
+  window.__ready = true;
+};
+window.render = function (t) { window.__ready = false; M.render(t); requestAnimationFrame(() => { window.__ready = true; }); };
+</script>
+</body>
+</html>

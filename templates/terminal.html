@@ -1,0 +1,282 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>prompt terminal</title>
+<style>
+  :root {
+    --bg: #0b0a10; --panel: #15131c; --line: #2a2634; --dim: #8b8598; --txt: #ece8f3;
+    --pink: #ff5fa2; --mint: #7ee0b8; --amber: #ffb547; --blue: #6aa8ff;
+    --seg: #241f2e; --chipbg: #1d1a26; --slash: #56506a; --name: #b9b2c9; --brandc: #5d576c;
+    --fade0: rgba(11,10,16,0); --bgdim: .45;
+  }
+  body.light {
+    --bg: #f3f0e9; --panel: #ffffff; --line: #e0dacd; --dim: #7d7668; --txt: #17151c;
+    --mint: #17996b; --blue: #2f6fd6;
+    --seg: #e7e2d7; --chipbg: #f7f4ee; --slash: #b5ad9c; --name: #4a4555; --brandc: #a49c8b;
+    --fade0: rgba(243,240,233,0); --bgdim: .9;
+  }
+  body.light .panel { box-shadow: 0 6px 24px rgba(40,30,10,.06); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; background: var(--bg); overflow: hidden; color: var(--txt);
+    font-family: Inter, system-ui, sans-serif; }
+  #stage { position: absolute; inset: 0; }
+
+  /* clip zone */
+  #clipzone { position: absolute; left: 0; top: 0; width: 1080px; height: 1400px; overflow: hidden; background: #000; }
+  #bg { position: absolute; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); object-fit: cover;
+    filter: blur(36px) brightness(var(--bgdim)) saturate(1.1); }
+  #clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  #clipzone::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 90px;
+    background: linear-gradient(to bottom, var(--fade0), var(--bg)); }
+  #handle { position: absolute; top: 34px; right: 38px; font: 700 34px Inter, sans-serif; color: rgba(255,255,255,.6);
+    text-shadow: 0 2px 6px rgba(0,0,0,.5); z-index: 3; }
+  #badge { position: absolute; right: 26px; bottom: 70px; width: 250px; z-index: 3; display: none; }
+
+  /* dashboard: 1380..1852, ~70 px free at the bottom for the X player UI */
+  #dash { position: absolute; left: 36px; right: 36px; top: 1380px; height: 472px; }
+  .row { position: absolute; left: 0; right: 0; }
+  #head { top: 0; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+  #title { font: 600 50px Oswald, Impact, sans-serif; letter-spacing: 1px; text-transform: uppercase; line-height: 1; }
+  #title .slash { color: var(--slash); margin: 0 12px; }
+  #title .name { color: var(--name); }
+  .chip { font: 700 22px "JetBrains Mono", monospace; padding: 10px 18px; border-radius: 999px; border: 2px solid var(--line);
+    color: var(--dim); letter-spacing: 1px; }
+  #model { border-color: var(--pink); color: var(--pink); }
+  #model .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--pink); margin-right: 10px;
+    vertical-align: 1px; }
+
+  #steps { top: 72px; height: 60px; border: 2px solid var(--line); border-radius: 14px; display: flex; align-items: center;
+    padding: 0 22px; font: 500 24px "JetBrains Mono", monospace; color: var(--dim); }
+  #steps .num { color: var(--txt); font-weight: 700; margin-right: 18px; }
+  #steps .lbl { color: var(--txt); margin-right: 24px; text-transform: uppercase; }
+  #steps .desc { flex: 1; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: Inter, sans-serif; }
+  #steps .of { margin-left: 16px; letter-spacing: 2px; }
+  #segs { position: absolute; left: 22px; right: 22px; bottom: -2px; height: 4px; display: flex; gap: 10px; }
+  #segs div { flex: 1; border-radius: 2px; background: var(--seg); }
+
+  .panel { position: absolute; background: var(--panel); border: 2px solid var(--line); border-radius: 22px; }
+  .ptitle { position: absolute; top: 16px; left: 24px; font: 700 21px "JetBrains Mono", monospace; letter-spacing: 2px; color: var(--dim); }
+  .ptitle b { color: var(--txt); font-weight: 700; }
+  .ptitle .bul { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--txt); margin-right: 12px; vertical-align: 2px; }
+
+  #prompt { left: 0; top: 146px; width: 700px; height: 248px; }
+  #ptext { position: absolute; left: 24px; right: 24px; top: 52px; font: 400 29px/1.42 "JetBrains Mono", monospace; color: var(--txt);
+    white-space: pre-wrap; word-break: break-word; }
+  #ptext .tag { color: var(--pink); font-weight: 700; }
+  #caret { display: inline-block; width: 16px; height: 34px; background: var(--mint); vertical-align: -6px; margin-left: 2px; }
+
+  #stats { left: 716px; top: 146px; width: 292px; height: 248px; }
+  .stat { position: absolute; left: 24px; right: 24px; }
+  .stat .k { font: 700 16px "JetBrains Mono", monospace; color: var(--dim); letter-spacing: 2px; }
+  .stat .v { font: 600 38px Oswald, sans-serif; line-height: 1.05; margin-top: 2px; }
+  #bar { height: 10px; border-radius: 5px; background: var(--seg); margin-top: 8px; overflow: hidden; }
+  #bar i { display: block; height: 100%; width: 0; background: var(--mint); border-radius: 6px; }
+  #spark { position: absolute; left: 24px; right: 24px; bottom: 16px; height: 34px; display: flex; align-items: flex-end; gap: 5px; }
+  #spark div { flex: 1; background: var(--blue); border-radius: 2px; opacity: .85; }
+
+  #chips { top: 408px; height: 64px; display: flex; gap: 16px; align-items: center; }
+  .pchip { font: 700 21px "JetBrains Mono", monospace; padding: 11px 20px; border-radius: 14px; border: 2px solid var(--line); color: var(--dim);
+    text-transform: uppercase; letter-spacing: 1px; }
+  .pchip.on { color: var(--txt); border-color: var(--txt); background: var(--chipbg); }
+  .pchip.done { color: var(--mint); border-color: rgba(126,224,184,.5); }
+  #brand { margin-left: auto; font: 500 20px "JetBrains Mono", monospace; color: var(--brandc); }
+
+  /* labeled cursor (kiosa style) */
+  /* variant "editor": the panel becomes a Claude Code window (TF / article skill output) */
+  body.editor #dash { top: 1376px; height: 482px; left: 28px; right: 28px; background: #1f1b16; border-radius: 22px; box-shadow: 0 20px 50px rgba(0,0,0,.35); }
+  body.editor #head { left: 0; right: 0; top: 0; height: 58px; padding: 0 24px; border-bottom: 1.5px solid #3a332b; }
+  body.editor #head::before { content: ""; width: 14px; height: 14px; border-radius: 50%; background: #e0605a; box-shadow: 24px 0 0 #e8b44f, 48px 0 0 #6fb36b; margin-right: 62px; flex: none; }
+  body.editor #title { font: 500 20px "JetBrains Mono", monospace; letter-spacing: 0; color: #b9ac98; text-transform: none; flex: 1; }
+  body.editor #title .slash, body.editor #title .name { color: #b9ac98; margin: 0; }
+  body.editor #model { padding: 6px 12px; font-size: 16px; }
+  body.editor #steps { display: none; }
+  body.editor #chips { top: 70px; left: 20px; right: 20px; height: 48px; gap: 6px; }
+  body.editor .pchip { font: 500 18px "JetBrains Mono", monospace; text-transform: none; letter-spacing: 0; padding: 9px 16px; border: none; border-radius: 10px 10px 0 0; color: #8f8370; background: transparent; }
+  body.editor .pchip.on { color: #f1e8da; background: #2c2620; }
+  body.editor .pchip.done { color: #8fb07a; border: none; }
+  body.editor #brand { color: #6f6455; font-size: 16px; }
+  body.editor #prompt { left: 20px; right: 20px; width: auto; top: 118px; height: 286px; background: #2c2620; border: none; border-radius: 0 12px 12px 12px; }
+  body.editor #prompt .ptitle { display: none; }
+  body.editor #prompt::before { content: "1\A 2\A 3\A 4\A 5\A 6\A 7"; white-space: pre; position: absolute; left: 0; top: 22px; width: 52px; text-align: right;
+    font: 400 22px/1.42 "JetBrains Mono", monospace; color: #5d5346; }
+  body.editor #ptext { left: 72px; top: 22px; color: #f1e8da; }
+  body.editor #stats { left: 20px; right: 20px; width: auto; top: 416px; height: 50px; background: transparent; border: none; border-radius: 0; }
+  body.editor #stats .ptitle, body.editor #spark, body.editor #stats .k { display: none; }
+  body.editor .stat { top: 8px !important; left: auto; right: auto; display: flex; align-items: center; gap: 14px; }
+  body.editor #stats > .stat { left: 4px; right: auto; } body.editor #stats > .stat + .stat { left: auto; right: 4px; }
+  body.editor .stat .v { font: 500 19px "JetBrains Mono", monospace; color: #b9ac98; margin: 0; }
+  body.editor #bar { width: 360px; margin: 0; background: #3a332b; }
+  /* editor colours follow the clip: neutral near-black on dark clips, paper-white on light clips */
+  body.editor #dash { background: #141417; }
+  body.editor #head { border-bottom-color: #2a2a30; }
+  body.editor #title, body.editor #title .slash, body.editor #title .name { color: #a3a3ad; }
+  body.editor .pchip { color: #7d7d88; } body.editor .pchip.on { color: #f2f2f5; background: #1f1f24; }
+  body.editor #prompt { background: #1f1f24; } body.editor #prompt::before { color: #4c4c56; }
+  body.editor #ptext { color: #ececf1; } body.editor #brand { color: #5f5f6a; }
+  body.editor .stat .v { color: #a3a3ad; } body.editor #bar { background: #2a2a30; }
+  body.editor.light #dash { background: #fbf9f5; box-shadow: 0 18px 44px rgba(60,45,20,.16); }
+  body.editor.light #head { border-bottom-color: #e7e1d6; }
+  body.editor.light #title, body.editor.light #title .slash, body.editor.light #title .name { color: #6f6758; }
+  body.editor.light .pchip { color: #9a917f; } body.editor.light .pchip.on { color: #1d1b17; background: #f1ece3; }
+  body.editor.light #prompt { background: #f1ece3; } body.editor.light #prompt::before { color: #c2b9a8; }
+  body.editor.light #ptext { color: #1d1b17; } body.editor.light #brand { color: #b0a794; }
+  body.editor.light .stat .v { color: #6f6758; } body.editor.light #bar { background: #e7e1d6; }
+  #cur { position: absolute; z-index: 9; left: 0; top: 0; pointer-events: none; }
+  #cur svg { width: 34px; height: 34px; display: block; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
+  #cur .pill { position: absolute; left: 26px; top: 26px; font: 700 20px Inter, sans-serif; color: var(--pilltxt, #111); padding: 6px 14px 6px 12px;
+    border-radius: 999px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="clipzone">
+    <img id="bg" alt=""><img id="clip" alt="">
+    <div id="handle"></div>
+    <img id="badge" alt="">
+  </div>
+  <div id="dash">
+    <div class="row" id="head"><div id="title"></div><div class="chip" id="model"><span class="dot"></span><span id="mlabel"></span></div></div>
+    <div class="row" id="steps"><span class="num" id="snum"></span><span class="lbl" id="slbl"></span><span class="desc" id="sdesc"></span><span class="of" id="sof"></span><div id="segs"></div></div>
+    <div class="panel" id="prompt"><div class="ptitle"><span class="bul"></span><b>PROMPT</b> / <span id="ptag"></span></div><div id="ptext"></div></div>
+    <div class="panel" id="stats">
+      <div class="ptitle"><span class="bul"></span><b>RENDER</b></div>
+      <div class="stat" style="top:50px"><div class="k">FRAMES</div><div class="v" id="frames">0</div><div id="bar"><i></i></div></div>
+      <div class="stat" style="top:142px"><div class="k" id="costk">COST</div><div class="v" id="cost">$0.00</div></div>
+      <div id="spark"></div>
+    </div>
+    <div class="row" id="chips"></div>
+  </div>
+  <div id="cur"><svg viewBox="0 0 24 24"><path d="M3 2l16 9-7 2-3 7z" fill="#fff" stroke="#111" stroke-width="1.3" stroke-linejoin="round"/></svg><div class="pill"></div></div>
+</div>
+<script>
+let D, PAGES, T0 = [], DUR;
+let COLORS = ["#ff5fa2", "#6aa8ff", "#7ee0b8", "#ffb547"];
+
+function applyTheme(th) {
+  th = th || {mode: "dark", hue: 330};
+  const light = th.mode === "light";
+  document.body.classList.toggle("light", light);
+  const h = th.hue ?? 330, S = light ? 72 : 88, L = light ? 44 : 66;
+  const c = dh => `hsl(${(h + dh + 360) % 360}, ${S}%, ${L}%)`;
+  COLORS = [c(0), c(150), c(210), c(60)];      // accent from the clip + 3 partners around the colour wheel
+  document.documentElement.style.setProperty("--pink", COLORS[0]);
+  document.documentElement.style.setProperty("--pilltxt", light ? "#fff" : "#111");
+}
+const ease = x => x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3) / 2;
+const clamp = (x, a=0, b=1) => Math.max(a, Math.min(b, x));
+
+async function loadFonts(root) {
+  const f = [["JetBrains Mono", "JetBrainsMono-Regular.ttf", "400"], ["JetBrains Mono", "JetBrainsMono-Bold.ttf", "700"],
+             ["Oswald", "Oswald.ttf", "200 700"], ["Inter", "Inter.ttf", "100 900"]];
+  for (const [fam, file, w] of f) {
+    try { const ff = new FontFace(fam, `url(${root}/assets/fonts/${file})`, {weight: w}); await ff.load(); document.fonts.add(ff); } catch (e) {}
+  }
+}
+
+window.setup = async function (d) {
+  window.__ready = false;
+  D = d; PAGES = d.pages; DUR = d.duration;
+  applyTheme(d.theme);
+  if (d.variant === "editor") {
+    document.body.classList.add("editor");
+    PAGES.forEach(p => { p._chip = p.tag.replace(":", "") + ".prompt"; });
+    d.title = "claude"; d.name = "~/viral-clip-lab/" + (d.slug || "clip");
+  }
+  const n = PAGES.length;
+  for (let i = 0; i < n; i++) T0.push(DUR * i / n);
+  document.getElementById("title").innerHTML = `${d.title || "PROMPT"}<span class="slash">/</span><span class="name">${d.name || ""}</span>`;
+  document.getElementById("handle").textContent = d.handle || "";
+  if (d.badge) { const b = document.getElementById("badge"); b.src = d.badge; b.style.display = "block"; }
+  // vertical clips fill the zone (no side bars, top/bottom trimmed around focusY); landscape clips stay contained
+  const cw = (d.clip && d.clip.w) || 9, ch = (d.clip && d.clip.h) || 16;
+  const fit = d.fit || (ch / cw > 1.2 ? "cover" : "contain");
+  const clipEl = document.getElementById("clip");
+  clipEl.style.objectFit = fit;
+  clipEl.style.objectPosition = `50% ${Math.round((d.focusY ?? 0.5) * 100)}%`;
+  const chips = document.getElementById("chips");
+  chips.innerHTML = PAGES.map((p, i) => `<div class="pchip" id="c${i}">${p._chip || String(i+1).padStart(2,"0") + " " + p.tag.replace(":", "")}</div>`).join("")
+    + `<div id="brand">${d.brand || "made with claude"}</div>`;
+  document.getElementById("segs").innerHTML = PAGES.map(() => "<div></div>").join("");
+  document.getElementById("spark").innerHTML = Array.from({length: 22}, () => "<div></div>").join("");
+  await loadFonts(d.root);
+  // fit every prompt page into the panel: shrink the font until the full text + tag line fits
+  const box = document.getElementById("ptext"), panel = document.getElementById("prompt");
+  const maxH = panel.clientHeight - 52 - 14;
+  for (const p of PAGES) {
+    let fs = 29;
+    while (fs > 18) {
+      box.style.fontSize = fs + "px";
+      box.innerHTML = `<span class="tag">&gt; ${p.tag}</span>\n` + p.text + '<span id="caret"></span>';
+      if (box.scrollHeight <= maxH) break;
+      fs -= 1;
+    }
+    p._fs = fs;
+  }
+  window.__ready = true;
+};
+
+function pageAt(t) { let k = 0; for (let i = 0; i < T0.length; i++) if (t >= T0[i]) k = i; return k; }
+
+function chipPos(i) {
+  const c = document.getElementById("c" + i), r = c.getBoundingClientRect();
+  return [r.left + r.width * .72, r.top + r.height * .55];
+}
+
+window.render = function (t, frameUrl) {
+  window.__ready = false;
+  const k = pageAt(t), p = PAGES[k], n = PAGES.length;
+  const pEnd = k + 1 < n ? T0[k + 1] : DUR, lt = t - T0[k], plen = pEnd - T0[k];
+
+  // header + step bar
+  document.getElementById("mlabel").textContent = (p.model || D.model || "").toUpperCase();
+  document.getElementById("snum").textContent = String(k + 1).padStart(2, "0") + " /";
+  document.getElementById("slbl").textContent = p.tag.replace(":", "");
+  document.getElementById("sdesc").textContent = p.desc || "";
+  document.getElementById("sof").textContent = `STEP ${k + 1} / ${n}`;
+  [...document.getElementById("segs").children].forEach((s, i) => {
+    s.style.background = i < k ? "var(--mint)" : i === k ? COLORS[k % 4] : "var(--seg)";
+  });
+  [...document.querySelectorAll(".pchip")].forEach((c, i) => c.className = "pchip" + (i < k ? " done" : i === k ? " on" : ""));
+
+  // typed prompt
+  document.getElementById("ptag").textContent = p.tag.replace(":", "").toUpperCase();
+  const typeSecs = Math.min(2.6, Math.max(.8, plen - 1.0));
+  const shown = Math.floor(p.text.length * clamp(lt / typeSecs));
+  const blink = shown < p.text.length || Math.floor(t * 2) % 2 === 0;
+  document.getElementById("ptext").style.fontSize = (p._fs || 29) + "px";
+  document.getElementById("ptext").innerHTML = `<span class="tag">&gt; ${p.tag}</span>\n` +
+    p.text.slice(0, shown).replace(/[<&]/g, c => c === "<" ? "&lt;" : "&amp;") + (blink ? '<span id="caret"></span>' : "");
+
+  // stats: frames, cost, spark
+  const prog = clamp(t / Math.max(DUR - .3, .1));
+  const total = Math.round(DUR * 30);
+  document.getElementById("frames").textContent = prog >= 1 ? "DONE" : `${Math.round(prog * total)}/${total}`;
+  document.querySelector("#bar i").style.width = (prog * 100).toFixed(1) + "%";
+  const cost = (D.cost || 0.3) * prog;
+  document.getElementById("costk").textContent = D.costLabel || "COST";
+  document.getElementById("cost").textContent = "$" + cost.toFixed(2);
+  [...document.getElementById("spark").children].forEach((b, i) => {
+    const on = i / 22 <= prog; const h = 18 + 70 * Math.abs(Math.sin(i * 1.7 + 0.6)) * (0.4 + 0.6 * i / 22);
+    b.style.height = (on ? h : 6) + "%"; b.style.opacity = on ? .9 : .25;
+  });
+
+  // labeled cursor glides from the previous chip to the current one at each step
+  const to = chipPos(k), from = chipPos(Math.max(0, k - 1));
+  const m = ease(clamp(lt / .7));
+  const wob = Math.sin(t * 2.3) * 6;
+  const x = from[0] + (to[0] - from[0]) * m, y = from[1] + (to[1] - from[1]) * m + wob;
+  const cur = document.getElementById("cur");
+  cur.style.transform = `translate(${x}px, ${y}px)`;
+  const pill = cur.querySelector(".pill");
+  pill.textContent = (p.who || p.tag.replace(":", "")).replace(/^./, c => c.toUpperCase());
+  pill.style.background = COLORS[k % 4];
+
+  // clip frame
+  const clip = document.getElementById("clip"), bg = document.getElementById("bg");
+  clip.src = frameUrl; bg.src = frameUrl;
+  Promise.all([clip.decode(), bg.decode()]).catch(() => {}).then(() => { window.__ready = true; });
+};
+</script>
+</body>
+</html>

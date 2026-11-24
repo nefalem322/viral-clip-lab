@@ -1,0 +1,264 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>claude viral lab</title>
+<style>
+  :root {
+    --bg: #e9e1d2; --card: #f4eee3; --ink: #2a251f; --dim: #9a8e7b; --line: #ddd3c2; --track: #e6dccb;
+    --acc: #c2603a; --ok: #6f8a5b; --amber: #d9a35a; --blue: #5b7fa6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1350px; background: var(--bg); color: var(--ink); overflow: hidden; font-family: Inter, sans-serif; }
+  .mono { font-family: "JetBrains Mono", monospace; }
+  .card { position: absolute; background: var(--card); border-radius: 22px; box-shadow: 0 1px 0 var(--line) inset, 0 12px 30px rgba(90,70,40,.07); overflow: hidden; }
+  .ct { position: absolute; top: 18px; left: 22px; right: 22px; display: flex; justify-content: space-between; align-items: center; }
+  .ct .l { font: 600 22px Inter, sans-serif; letter-spacing: .3px; }
+  .ct .l::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--ink); margin-right: 12px; vertical-align: 3px; }
+  .ct .r { font: 700 13px "JetBrains Mono", monospace; letter-spacing: 1.5px; color: var(--dim); border: 1.5px solid var(--line); border-radius: 999px; padding: 5px 11px; }
+
+  #head { position: absolute; left: 36px; right: 36px; top: 28px; height: 150px; }
+  #proj { font: 500 16px "JetBrains Mono", monospace; letter-spacing: 2px; color: var(--dim); }
+  #title { font: 600 84px/1 Oswald, sans-serif; letter-spacing: 1px; margin-top: 8px; white-space: nowrap; }
+  #title .s { color: #c9bca6; }
+  #subt { font: 500 17px "JetBrains Mono", monospace; letter-spacing: 2px; color: var(--dim); margin-top: 12px; }
+  #best { position: absolute; right: 0; top: 0; font: 700 16px "JetBrains Mono", monospace; letter-spacing: 1.5px; border: 2px solid var(--ink);
+    border-radius: 999px; padding: 10px 18px; display: flex; gap: 12px; align-items: center; }
+  #best i { width: 10px; height: 10px; border-radius: 50%; background: var(--ok); display: inline-block; }
+  #logo { position: absolute; right: 0; top: 62px; width: 104px; height: 104px; border-radius: 26px; background: var(--ink); display: grid; place-items: center; }
+
+  #steps { position: absolute; left: 36px; right: 36px; top: 196px; height: 58px; border: 2px solid var(--line); border-radius: 14px;
+    display: flex; align-items: center; padding: 0 20px; font: 500 19px "JetBrains Mono", monospace; color: var(--dim); }
+  #steps b { color: var(--ink); margin-right: 16px; }
+  #steps .lb { color: var(--ink); margin-right: 22px; }
+  #steps .ds { flex: 1; font-family: Inter, sans-serif; font-size: 18px; color: #6e6455; }
+  #segs { position: absolute; left: 20px; right: 20px; bottom: -2px; height: 4px; display: flex; gap: 8px; }
+  #segs div { flex: 1; border-radius: 2px; background: var(--track); }
+
+  /* feed */
+  #feed { left: 36px; top: 274px; width: 590px; height: 470px; }
+  .row { position: absolute; left: 18px; right: 18px; height: 62px; display: grid; grid-template-columns: 62px 1fr 150px; gap: 14px; align-items: center;
+    border-radius: 14px; padding: 0 8px; }
+  .row img { width: 54px; height: 54px; border-radius: 10px; object-fit: cover; }
+  .row .tt { font: 600 17px Inter, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .mt { font: 500 13px "JetBrains Mono", monospace; color: var(--dim); margin-top: 3px; }
+  .row .vh { font: 700 15px "JetBrains Mono", monospace; text-align: right; }
+  .row .bar { height: 6px; border-radius: 3px; background: var(--track); margin-top: 6px; overflow: hidden; }
+  .row .bar i { display: block; height: 100%; background: var(--acc); border-radius: 3px; }
+  .row.scan { background: #efe6d7; }
+  .row.pick { background: var(--ink); color: var(--card); }
+  .row.pick .mt { color: #c9bca6; }
+  .pill { position: absolute; font: 700 13px "JetBrains Mono", monospace; letter-spacing: 1px; padding: 6px 11px; border-radius: 999px; }
+  #pickpill { background: var(--ok); color: #fff; }
+  #scanline { position: absolute; left: 0; right: 0; height: 2px; background: var(--acc); opacity: .55; }
+
+  /* agents */
+  #agents { left: 646px; top: 274px; width: 398px; height: 470px; }
+  .ag { position: absolute; left: 18px; right: 18px; height: 62px; display: grid; grid-template-columns: 40px 1fr 70px 86px; gap: 10px; align-items: center; border-radius: 14px; padding: 0 8px; }
+  .ag .dot { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; font: 700 14px "JetBrains Mono", monospace; color: #fff; }
+  .ag .nm { font: 700 16px "JetBrains Mono", monospace; letter-spacing: 1px; }
+  .ag .tk { font: 500 12.5px Inter, sans-serif; color: var(--dim); margin-top: 2px; white-space: nowrap; }
+  .ag .st { font: 700 12px "JetBrains Mono", monospace; letter-spacing: 1px; text-align: center; padding: 5px 0; border-radius: 999px; }
+  .ag.work { background: #efe6d7; box-shadow: 0 0 0 2px var(--ok) inset; }
+  svg.sp { width: 70px; height: 26px; }
+
+  /* decode */
+  #decode { left: 36px; top: 764px; width: 590px; height: 330px; }
+  #vid { position: absolute; left: 22px; top: 62px; width: 190px; height: 248px; border-radius: 14px; overflow: hidden; background: #000; }
+  #vid img { width: 100%; height: 100%; object-fit: cover; }
+  #vid .tc { position: absolute; left: 8px; bottom: 8px; font: 700 12px "JetBrains Mono", monospace; color: #fff; background: rgba(0,0,0,.55); padding: 3px 7px; border-radius: 6px; }
+  #hooks { position: absolute; left: 232px; right: 22px; top: 60px; }
+  .hk { margin-bottom: 10px; }
+  .hk .hl { display: flex; justify-content: space-between; font: 700 15px "JetBrains Mono", monospace; letter-spacing: 1px; }
+  .hk .ht { height: 12px; border-radius: 6px; background: var(--track); margin-top: 6px; overflow: hidden; }
+  .hk .ht i { display: block; height: 100%; border-radius: 6px; }
+  #verdict { position: absolute; left: 232px; right: 22px; bottom: 18px; height: 44px; font: 500 13.5px/1.4 "JetBrains Mono", monospace; color: #6e6455; }
+  #verdict b { color: var(--acc); }
+
+  /* terminal */
+  #term { left: 646px; top: 764px; width: 398px; height: 330px; background: var(--ink); color: #efe6d7; }
+  #term .ct .l::before { background: #efe6d7; }
+  #term .ct .r { color: #a89a85; border-color: #4a4238; }
+  #log { position: absolute; left: 22px; right: 18px; top: 64px; bottom: 16px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end;
+    font: 400 13.5px/1.55 "JetBrains Mono", monospace; white-space: pre-wrap; word-break: break-all; }
+  #log .p { color: #e0915f; } #log .ok { color: #a7c48f; } #log .dm { color: #a89a85; }
+  #log .cur { display: inline-block; width: 9px; height: 16px; background: #a7c48f; vertical-align: -2px; }
+
+  /* payout */
+  #pay { left: 36px; top: 1114px; width: 590px; height: 190px; }
+  #money { position: absolute; left: 22px; top: 54px; font: 600 70px/1 Oswald, sans-serif; letter-spacing: .5px; }
+  #money small { font-size: 26px; color: var(--dim); }
+  #paynote { position: absolute; left: 24px; top: 138px; font: 500 14px "JetBrains Mono", monospace; color: var(--dim); letter-spacing: .5px; }
+  #pbars { position: absolute; right: 22px; top: 62px; width: 180px; height: 104px; display: flex; gap: 6px; align-items: flex-end; }
+  #pbars i { flex: 1; border-radius: 3px 3px 0 0; background: var(--acc); }
+
+  /* ship */
+  #ship { left: 646px; top: 1114px; width: 398px; height: 190px; }
+  .q { position: absolute; left: 22px; right: 22px; height: 34px; display: flex; justify-content: space-between; align-items: center; font: 600 15px Inter, sans-serif; }
+  .q .s { font: 700 12px "JetBrains Mono", monospace; letter-spacing: 1px; padding: 5px 10px; border-radius: 999px; }
+
+  #foot { position: absolute; left: 36px; right: 36px; bottom: 16px; display: flex; justify-content: space-between; font: 500 14px "JetBrains Mono", monospace; color: var(--dim); }
+
+  /* cursors */
+  .cur2 { position: absolute; z-index: 20; left: 0; top: 0; }
+  .cur2 svg { width: 30px; height: 30px; display: block; filter: drop-shadow(0 2px 3px rgba(40,30,20,.35)); }
+  .cur2 .pl { position: absolute; left: 22px; top: 24px; font: 700 15px Inter, sans-serif; color: #fff; padding: 5px 12px; border-radius: 999px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="head">
+  <div id="proj">● PROJECT / VIRAL_CLIP_LAB</div>
+  <div id="title">CLAUDE VIRAL LAB <span class="s">/ 01</span></div>
+  <div id="subt">SHORTS · TIKTOK · REELS &nbsp;×&nbsp; 5 STEPS &nbsp;×&nbsp; 1 CLIP A DAY</div>
+  <div id="best"><i></i><span id="bestv">BEST CLIP 4.7M</span></div>
+  <div id="logo"><svg viewBox="0 0 48 48" width="60" height="60"><g fill="#e0915f"><path d="M24 4l3.2 13.2L40 12l-9.6 9.8L44 24l-13.6 2.2L40 36l-12.8-5.2L24 44l-3.2-13.2L8 36l9.6-9.8L4 24l13.6-2.2L8 12l12.8 5.2z"/></g></svg></div>
+</div>
+<div id="steps"><b id="snum"></b><span class="lb" id="slb"></span><span class="ds" id="sds"></span><span id="sof"></span><div id="segs"><div></div><div></div><div></div><div></div><div></div></div></div>
+
+<div class="card" id="feed"><div class="ct"><span class="l">LIVE FEED / FOR YOU</span><span class="r" id="scanned">SCANNED 0</span></div>
+  <div id="rows"></div><div id="scanline"></div><div class="pill" id="pickpill" style="display:none">PICK</div></div>
+<div class="card" id="agents"><div class="ct"><span class="l">CLAUDE AGENTS / 6</span><span class="r" id="online">6/6 ONLINE</span></div><div id="agrows"></div></div>
+<div class="card" id="decode"><div class="ct"><span class="l">DECODE / FIRST 3 SECONDS</span><span class="r">4 FPS</span></div>
+  <div id="vid"><img id="clip" alt=""><span class="tc" id="tc">0:00</span></div><div id="hooks"></div><div id="verdict"></div></div>
+<div class="card" id="term"><div class="ct"><span class="l">CLAUDE CODE</span><span class="r">~/viral-clip-lab</span></div><div id="log"></div></div>
+<div class="card" id="pay"><div class="ct"><span class="l">PAYOUT / THIS MONTH</span><span class="r">EST. · VIEWS × RATE</span></div>
+  <div id="money"></div><div id="paynote"></div><div id="pbars"></div></div>
+<div class="card" id="ship"><div class="ct"><span class="l">SHIP / TODAY</span><span class="r">YOU POST</span></div><div id="queue"></div></div>
+<div id="foot"><span>built with Claude Code + Picsart</span><span>github.com/nefalem322/viral-clip-lab</span></div>
+<div class="cur2" id="cA"><svg viewBox="0 0 24 24"><path d="M3 2l16 9-7 2-3 7z" fill="#fff" stroke="#2a251f" stroke-width="1.4" stroke-linejoin="round"/></svg><div class="pl"></div></div>
+<div class="cur2" id="cB"><svg viewBox="0 0 24 24"><path d="M3 2l16 9-7 2-3 7z" fill="#fff" stroke="#2a251f" stroke-width="1.4" stroke-linejoin="round"/></svg><div class="pl"></div></div>
+
+<script>
+let D, DUR;
+const C = { acc: "#c2603a", ok: "#6f8a5b", amber: "#d9a35a", blue: "#5b7fa6", ink: "#2a251f", dim: "#9a8e7b", plum: "#8a5a7a" };
+const STEPS = [
+  ["SCOUT", "fresh AI clips on Shorts, TikTok and Reels, ranked by views per hour"],
+  ["CHECK", "is it AI · was it already big this week · any watermarks to remove"],
+  ["DECODE", "first 3 seconds frame by frame: which hook keeps people watching"],
+  ["REBUILD", "image / video / remix prompts to make your own version in Picsart"],
+  ["SHIP", "9:16 cut, prompt terminal, caption and the time to post"]];
+const AGENTS = [["SCOUT", "views/h · age < 48h", C.acc], ["CHECK", "ai proof · repeats", C.blue], ["DECODE", "hook · 4 fps · speech", C.amber],
+  ["REBUILD", "image · video · remix", C.plum], ["SHIP", "cut · terminal · caption", C.ok], ["TRACK", "views → est. payout", C.ink]];
+const HOOKS = [["FAMOUS CHARACTERS", 92, C.acc], ["IMPOSSIBLE PHYSICS", 71, C.amber], ["TINY ACTION, HUGE RESULT", 64, C.ok], ["ANIMAL MAKES A DEAL", 48, C.blue]];
+const LOG = [
+  [0.3, '<span class="p">claude&gt;</span> scout "ai animals" --platforms yt,tt,reels --max-age 48h'],
+  [1.6, '<span class="dm">  pulled 312 clips · ranking by views/hour</span>'],
+  [3.4, '<span class="ok">  ✓ pick: tin man dinner · 312K/h · 9h old</span>'],
+  [5.2, '<span class="p">claude&gt;</span> check tinman.mp4'],
+  [6.3, '<span class="ok">  ✓ generated (movie cast, real room) · not big this week</span>'],
+  [7.4, '<span class="dm">  watermark: none · length 26.0s ≥ 10s</span>'],
+  [10.0, '<span class="p">claude&gt;</span> decode --first 3s --fps 4'],
+  [11.3, '<span class="ok">  ✓ hook: famous characters, ordinary room</span>'],
+  [14.8, '<span class="p">claude&gt;</span> rebuild --target picsart/kling'],
+  [16.0, '<span class="ok">  ✓ image · video · remix prompts written</span>'],
+  [19.6, '<span class="p">claude&gt;</span> ship --terminal --caption --slot best'],
+  [21.0, '<span class="ok">  ✓ tinman_9x16.mp4 · caption.txt · post 18:00 ET</span>']];
+const Q = [["YouTube Shorts", "18:00"], ["TikTok", "19:30"], ["Instagram Reels", "21:00"]];
+
+const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const cl = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const lerp = (a, b, x) => a + (b - a) * x;
+
+async function loadFonts(root) {
+  const f = [["JetBrains Mono", "JetBrainsMono-Regular.ttf", "400"], ["JetBrains Mono", "JetBrainsMono-Bold.ttf", "700"], ["Oswald", "Oswald.ttf", "200 700"], ["Inter", "Inter.ttf", "100 900"]];
+  for (const [fam, file, w] of f) { try { const ff = new FontFace(fam, `url(${root}/assets/fonts/${file})`, {weight: w}); await ff.load(); document.fonts.add(ff); } catch (e) {} }
+}
+
+window.setup = async function (d) {
+  window.__ready = false; D = d; DUR = d.duration;
+  document.getElementById("rows").innerHTML = d.feed.map((r, i) => `<div class="row" id="r${i}" style="top:${64 + i * 66}px"><img src="${r.img}"><div><div class="tt">${r.t}</div><div class="mt">${r.p} · ${r.age}</div></div><div><div class="vh">${r.vh}/h</div><div class="bar"><i style="width:${r.w}%"></i></div></div></div>`).join("");
+  document.getElementById("agrows").innerHTML = AGENTS.map((a, i) => `<div class="ag" id="a${i}" style="top:${64 + i * 66}px"><div class="dot" style="background:${a[2]}">${a[0][0]}</div><div><div class="nm">${a[0]}</div><div class="tk">${a[1]}</div></div><svg class="sp" viewBox="0 0 70 26"><path id="sp${i}" fill="none" stroke="${a[2]}" stroke-width="2.2" stroke-linecap="round"/></svg><div class="st" id="st${i}"></div></div>`).join("");
+  document.getElementById("hooks").innerHTML = HOOKS.map((h, i) => `<div class="hk"><div class="hl"><span>${h[0]}</span><span id="hv${i}">0</span></div><div class="ht"><i id="hb${i}" style="background:${h[2]}"></i></div></div>`).join("");
+  document.getElementById("queue").innerHTML = Q.map((q, i) => `<div class="q" style="top:${66 + i * 40}px"><span>${q[0]} <span class="mono" style="color:var(--dim);font-size:14px">· ${q[1]}</span></span><span class="s" id="q${i}"></span></div>`).join("");
+  document.getElementById("pbars").innerHTML = Array.from({length: 18}, () => "<i></i>").join("");
+  await loadFonts(d.root);
+  window.__ready = true;
+};
+
+function center(id, fx = .5, fy = .5) { const r = document.getElementById(id).getBoundingClientRect(); return [r.left + r.width * fx, r.top + r.height * fy]; }
+function moveCursor(el, pts, t, label, color) {
+  // pts: [[time, [x,y]], ...] glide between waypoints
+  let k = 0; for (let i = 0; i < pts.length; i++) if (t >= pts[i][0]) k = i;
+  const a = pts[k], b = pts[Math.min(k + 1, pts.length - 1)];
+  const m = b[0] > a[0] ? ease(cl((t - a[0]) / Math.min(.9, b[0] - a[0]))) : 0;
+  const x = lerp(a[1][0], b[1][0], k + 1 < pts.length ? m : 0), y = lerp(a[1][1], b[1][1], k + 1 < pts.length ? m : 0) + Math.sin(t * 2.1) * 5;
+  el.style.transform = `translate(${x}px,${y}px)`; const pl = el.querySelector(".pl"); pl.textContent = label; pl.style.background = color;
+}
+
+window.render = function (t, frameUrl) {
+  window.__ready = false;
+  const sl = DUR / 5, k = Math.min(4, Math.floor(t / sl)), lt = t - k * sl;
+  // step bar
+  document.getElementById("snum").textContent = `0${k + 1} /`;
+  document.getElementById("slb").textContent = STEPS[k][0];
+  document.getElementById("sds").textContent = STEPS[k][1];
+  document.getElementById("sof").textContent = `STEP ${k + 1} / 5`;
+  [...document.getElementById("segs").children].forEach((s, i) => s.style.background = i < k ? C.ok : i === k ? C.acc : "var(--track)");
+
+  // feed: scan during step 1, then the pick stays
+  const sc = Math.floor(lerp(0, 312, cl(t / (sl * .9))));
+  document.getElementById("scanned").textContent = `SCANNED ${sc}`;
+  const scanning = k === 0 && lt < sl * .8;
+  const si = Math.floor(t * 3.2) % D.feed.length;
+  D.feed.forEach((r, i) => { document.getElementById("r" + i).className = "row" + (!scanning && i === 0 ? " pick" : scanning && i === si ? " scan" : ""); });
+  const sline = document.getElementById("scanline");
+  sline.style.display = scanning ? "block" : "none"; sline.style.top = (64 + ((t * 120) % 396)) + "px";
+  const pp = document.getElementById("pickpill"); pp.style.display = scanning ? "none" : "block"; pp.style.right = "22px"; pp.style.top = "16px"; pp.textContent = "PICK · " + D.feed[0].vh + "/h";
+  document.getElementById("scanned").style.visibility = scanning ? "visible" : "hidden";
+
+  // agents
+  AGENTS.forEach((a, i) => {
+    const st = document.getElementById("st" + i), row = document.getElementById("a" + i);
+    let s, bg, fg;
+    if (i === 5) { s = "LIVE"; bg = "#e6dccb"; fg = C.ink; }
+    else if (i < k || (k === 4 && lt > sl * .8 && i === 4)) { s = "DONE"; bg = "#dfe6d6"; fg = C.ok; }
+    else if (i === k) { s = "WORKING"; bg = C.ok; fg = "#fff"; }
+    else { s = "READY"; bg = "transparent"; fg = C.dim; }
+    st.textContent = s; st.style.background = bg; st.style.color = fg; row.className = "ag" + (i === k && i < 5 ? " work" : "");
+    const act = i === k || i === 5 ? 1 : i < k ? .35 : .15;
+    let d = ""; for (let x = 0; x <= 70; x += 3.5) { const y = 13 + Math.sin(x * .17 + t * (i === k ? 6 : 2) + i) * 9 * act; d += (x ? "L" : "M") + x + " " + y.toFixed(1); }
+    document.getElementById("sp" + i).setAttribute("d", d);
+  });
+  document.getElementById("online").textContent = `${k + 1}/5 DONE`;
+
+  // decode: clip plays, hook bars fill during step 3
+  const hp = cl((t - 2 * sl) / (sl * .8));
+  HOOKS.forEach((h, i) => { const v = h[1] * ease(cl(hp * 1.3 - i * .12)); document.getElementById("hb" + i).style.width = v + "%"; document.getElementById("hv" + i).textContent = Math.round(v * 3.4); });
+  document.getElementById("verdict").innerHTML = hp > .85 ? 'hook = <b>famous characters, ordinary room</b>. second 1: the Tin Man is already mid-argument.' : hp > 0 ? "reading frames 01–12 ..." : "waiting for a pick";
+  document.getElementById("tc").textContent = "0:" + String(Math.floor(t % 60)).padStart(2, "0");
+
+  // terminal log
+  let html = "";
+  LOG.forEach(([t0, line], i) => {
+    const t1 = (t0 / 24) * DUR; if (t < t1) return;
+    const plain = line.replace(/<[^>]+>/g, ""), n = Math.floor(cl((t - t1) / .9) * plain.length);
+    if (n >= plain.length) html += line + "\n";
+    else { html += '<span class="p">' + plain.slice(0, n).replace(/</g, "&lt;") + '</span><span class="cur"></span>\n'; }
+  });
+  const lines = html.split("\n").filter(Boolean).slice(-9);
+  if (!/class="cur"/.test(lines[lines.length - 1] || "") && Math.floor(t * 2) % 2 === 0) lines.push('<span class="cur"></span>');
+  document.getElementById("log").innerHTML = lines.map(l => `<div>${l}</div>`).join("");
+
+  // payout (est.)
+  const mp = ease(cl(t / DUR));
+  const money = Math.round(lerp(8930, 10412, mp));
+  document.getElementById("money").innerHTML = "$" + money.toLocaleString("en-US") + "<small> / month</small>";
+  document.getElementById("paynote").textContent = `YT ${(money * .52 / 1000).toFixed(1)}K · TT ${(money * .31 / 1000).toFixed(1)}K · CLIPS ${(money * .17 / 1000).toFixed(1)}K`;
+  [...document.getElementById("pbars").children].forEach((b, i) => { const on = i / 18 <= mp + .05; const h = 22 + 70 * (i / 17) + 10 * Math.sin(i * 1.9); b.style.height = (on ? h : 8) + "%"; b.style.opacity = on ? .95 : .25; });
+
+  // ship queue
+  Q.forEach((q, i) => { const e = document.getElementById("q" + i); const ready = k === 4 && lt > sl * (.25 + i * .2);
+    e.textContent = ready ? "READY" : k === 4 ? "BUILDING" : "QUEUED"; e.style.background = ready ? C.ok : k === 4 ? "#efe6d7" : "transparent"; e.style.color = ready ? "#fff" : C.dim; });
+
+  // cursors: one follows the active step, one checks the money
+  const S = sl;
+  moveCursor(document.getElementById("cA"), [[0, center("feed", .55, .32)], [S * 0.9, center("r0", .8, .5)], [S * 1.1, center("agents", .7, .32)], [S * 2.05, center("hooks", .5, .2)],
+    [S * 3.05, center("term", .6, .7)], [S * 4.05, center("ship", .7, .55)], [DUR, center("ship", .72, .75)]], t, STEPS[k][0][0] + STEPS[k][0].slice(1).toLowerCase(), [C.acc, C.blue, C.amber, C.plum, C.ok][k]);
+  moveCursor(document.getElementById("cB"), [[0, center("pay", .3, .5)], [S * 1.5, center("pbars", .7, .6)], [S * 3, center("money", .6, .5)], [DUR, center("pbars", .4, .4)]], t, "Track", C.ink);
+
+  const clip = document.getElementById("clip"); clip.src = frameUrl;
+  clip.decode().catch(() => {}).then(() => { window.__ready = true; });
+};
+</script>
+</body>
+</html>
